@@ -1,11 +1,16 @@
-const mongo = require('mongodb')
-const database = require('../../database/utils')
-const db = database.getDatabaseConnection()
-const { Product, ProductFamily } = require('../models/products')
+import { Context, HttpRequest } from '@azure/functions';
+import * as mongo from 'mongodb';
+import { getDatabaseConnection } from '../src/database/connection';
+import { Product, ProductFamily } from './models'
 
-const errorHandler = (error, res) => {
+let db;
+
+function errorHandler(error, context: Context) {
   console.error(error)
-  res.status(500).send(error)
+  context.res = {
+    status: 500,
+    body: error
+  }
 }
 
 const createMatchObjectFromQuery = function (query) {
@@ -14,9 +19,9 @@ const createMatchObjectFromQuery = function (query) {
       // Note: Value can be either a string or an Array
       let mongoMatchValue
       try {
-        const parsedValue = JSON.parse(value)
+        const parsedValue = JSON.parse(value as any)
         if (Array.isArray(parsedValue)) {
-          mongoMatchValue = { $in: JSON.parse(value) }
+          mongoMatchValue = { $in: JSON.parse(value as any) }
         } else {
           mongoMatchValue = value
         }
@@ -33,18 +38,21 @@ const createMatchObjectFromQuery = function (query) {
 
 // Products
 
-const find = async function (req, res) {
+export async function find(context: Context, req: HttpRequest) {
   try {
+    const db = await getDatabaseConnection();
     const query = req.query || {}
-    console.log(query)
     const result = await db.collection('products').find(query).toArray()
-    res.status(200).send(result)
+    context.res = {
+      status: 200,
+      body: result
+    }
   } catch (error) {
-    errorHandler(error, res)
+    errorHandler(error, context)
   }
 }
 
-const findFamilies = async function (req, res) {
+export async function findFamilies(req, res) {
   try {
     const result = await db
       .collection('products.families')
@@ -57,7 +65,7 @@ const findFamilies = async function (req, res) {
   }
 }
 
-const findFamily = async function (req, res) {
+export async function findFamily(req, res) {
   try {
     const _id = new mongo.ObjectId(req.params.id)
     const result = await db.collection('products.families').findOne({ _id })
@@ -67,7 +75,7 @@ const findFamily = async function (req, res) {
   }
 }
 
-const findAndGroupByCategories = async function (req, res) {
+export async function findAndGroupByCategories(req, res) {
   try {
     const mongoQuery = createMatchObjectFromQuery(req.query)
     const result = await db
@@ -163,17 +171,21 @@ const findAndGroupByCategories = async function (req, res) {
   }
 }
 
-const create = async function (req, res) {
+export async function create(context: Context, req: HttpRequest) {
   try {
+    const db = await getDatabaseConnection();
     const product = new Product(req.body)
     const result = await db.collection('products').insertOne(product)
-    res.status(200).send(result)
+    context.res = {
+      status: 200,
+      body: result
+    }
   } catch (error) {
-    errorHandler(error, res)
+    errorHandler(error, context)
   }
 }
 
-const createFamily = async function (req, res) {
+export async function createFamily(req, res) {
   try {
     const { name, category, subcategory } = req.body
     const productFamily = new ProductFamily({ name, category, subcategory })
@@ -187,7 +199,7 @@ const createFamily = async function (req, res) {
   }
 }
 
-const update = async function (req, res) {
+export async function update(req, res) {
   const _id = new mongo.ObjectId(req.params.id)
   const update = req.body
   const set = {}
@@ -205,7 +217,7 @@ const update = async function (req, res) {
   }
 }
 
-const updateFamily = async function (req, res) {
+export async function updateFamily(req, res) {
   const _id = new mongo.ObjectId(req.params.id)
   const { category, subcategory, name } = req.body
   const family = new ProductFamily({ category, subcategory, name })
@@ -222,7 +234,7 @@ const updateFamily = async function (req, res) {
   }
 }
 
-const deleteFamily = async function (req, res) {
+export async function deleteFamily(req, res) {
   const family_id = req.params.id
   const _id = new mongo.ObjectID(family_id)
   try {
@@ -234,7 +246,7 @@ const deleteFamily = async function (req, res) {
   }
 }
 
-const deleteProduct = async function (req, res) {
+export async function deleteProduct(req, res) {
   const _id = new mongo.ObjectID(req.params.id)
   try {
     const result = await db.collection('products').deleteOne({ _id })
@@ -245,7 +257,7 @@ const deleteProduct = async function (req, res) {
 }
 
 // Product Categories
-const findCategories = async function (req, res) {
+export async function findCategories(req, res) {
   try {
     const result = await db
       .collection('products.families')
@@ -262,7 +274,7 @@ const findCategories = async function (req, res) {
 }
 
 // Product Subcategories
-const findSubcategories = async function (req, res) {
+export async function findSubcategories(req, res) {
   const query = req.query || {}
   try {
     const result = await db
@@ -281,7 +293,7 @@ const findSubcategories = async function (req, res) {
 }
 
 // Product Names
-const findNames = async function (req, res) {
+export async function findNames(req, res) {
   const query = req.query || {}
   try {
     const result = await db
@@ -300,7 +312,7 @@ const findNames = async function (req, res) {
 }
 
 // Product Colors
-const findColors = async function (req, res) {
+export async function findColors(req, res) {
   const query = req.query || {}
   try {
     const result = await db
@@ -342,7 +354,7 @@ const findColors = async function (req, res) {
 }
 
 // Product Sizes
-const findSizes = async function (req, res) {
+export async function findSizes(req, res) {
   const query = req.query || {}
   try {
     const result = await db
@@ -381,22 +393,4 @@ const findSizes = async function (req, res) {
   } catch (error) {
     errorHandler(error, res)
   }
-}
-
-module.exports = {
-  find,
-  findFamilies,
-  findFamily,
-  findAndGroupByCategories,
-  create,
-  createFamily,
-  update,
-  deleteProduct,
-  deleteFamily,
-  findCategories,
-  findSubcategories,
-  findNames,
-  findColors,
-  findSizes,
-  updateFamily,
 }

@@ -1,3 +1,6 @@
+# Source files from last project not needed in github
+src 
+
 # Logs
 logs
 *.log
@@ -36,9 +39,8 @@ bower_components
 # Compiled binary addons (https://nodejs.org/api/addons.html)
 build/Release
 
-# Dependency directories
+# Npm
 node_modules/
-jspm_packages/
 
 # TypeScript v1 declaration files
 typings/

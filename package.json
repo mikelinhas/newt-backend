@@ -9,7 +9,11 @@
     "start": "func start",
     "test": "echo \"No tests yet...\""
   },
-  "dependencies": {},
+  "dependencies": {
+    "joi": "^17.6.0",
+    "mongodb": "^4.7.0",
+    "yup": "^0.32.11"
+  },
   "devDependencies": {
     "@azure/functions": "^3.0.0",
     "@types/node": "^18.0.0",

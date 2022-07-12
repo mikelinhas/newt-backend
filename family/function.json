@@ -7,9 +7,7 @@
       "name": "req",
       "methods": [
         "get",
-        "post",
-        "patch",
-        "delete"
+        "post"
       ]
     },
     {
@@ -18,5 +16,5 @@
       "name": "res"
     }
   ],
-  "scriptFile": "../dist/HttpTriggerForNewt/index.js"
+  "scriptFile": "../dist/family/index.js"
 }

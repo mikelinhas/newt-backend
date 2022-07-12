@@ -1,4 +1,10 @@
-class ProductFamily {
+import { ObjectId } from "mongodb"
+
+export class ProductFamily {
+  category: string
+  subcategory: string
+  name: string
+
   constructor({ category, subcategory, name }) {
     this.category = category.toLowerCase()
     this.subcategory = subcategory.toLowerCase()
@@ -6,7 +12,13 @@ class ProductFamily {
   }
 }
 
-class Product {
+export class Product {
+  family_id: ObjectId
+  size: string
+  color: string
+  enabled: boolean
+  created_at: Date
+
   constructor({ size, family_id, color }) {
     this.family_id = family_id
     this.size = size.toUpperCase()
@@ -15,5 +27,3 @@ class Product {
     this.created_at = new Date()
   }
 }
-
-module.exports = { ProductFamily, Product }
