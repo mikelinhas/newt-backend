@@ -1,5 +1,6 @@
 import { Context, HttpRequest } from '@azure/functions'
 import { object, string } from 'yup'
+import { NextFuction } from '../middleware/handler'
 
 function handleValidationError(context: Context, error: any) {
   context.res = {
@@ -7,7 +8,7 @@ function handleValidationError(context: Context, error: any) {
     body: { message: error.message }
   }
 }
-export async function create(context: Context, req: HttpRequest) {
+export async function create(context: Context, req: HttpRequest, next: NextFuction) {
   try {
     const productSchema = object({
       family_id: string().required(),
@@ -17,6 +18,7 @@ export async function create(context: Context, req: HttpRequest) {
 
     const value = await productSchema.validate(req.body)
     req.body = value
+    next()
   } catch (error) {
     handleValidationError(context, error)
   }
@@ -55,6 +57,6 @@ export async function updateFamily(req, res, next) {
   }
 }
 
-export function update(req, res, next) {
+export async function update(context: Context, req: HttpRequest, next: NextFuction) {
   next()
 }

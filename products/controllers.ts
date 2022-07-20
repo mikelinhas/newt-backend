@@ -1,17 +1,12 @@
 import { Context, HttpRequest } from '@azure/functions';
 import * as mongo from 'mongodb';
-import { getDatabaseConnection } from '../src/database/connection';
+import { getDatabaseConnection } from '../database/connection';
+import { errorHandler } from '../middleware/handler';
 import { Product, ProductFamily } from './models'
 
 let db;
 
-function errorHandler(error, context: Context) {
-  console.error(error)
-  context.res = {
-    status: 500,
-    body: error
-  }
-}
+
 
 const createMatchObjectFromQuery = function (query) {
   const mongoMatchObject = Object.entries(query).reduce(
@@ -37,7 +32,6 @@ const createMatchObjectFromQuery = function (query) {
 }
 
 // Products
-
 export async function find(context: Context, req: HttpRequest) {
   try {
     const db = await getDatabaseConnection();
@@ -52,30 +46,36 @@ export async function find(context: Context, req: HttpRequest) {
   }
 }
 
-export async function findFamilies(req, res) {
+export async function findFamilies(context: Context, req: HttpRequest) {
   try {
     const result = await db
       .collection('products.families')
       .find({})
       .sort({ category: 1 })
       .toArray()
-    res.status(200).send(result)
+    context.res = {
+      status: 200,
+      body: result
+    }
   } catch (error) {
-    errorHandler(error, res)
+    errorHandler(error, context)
   }
 }
 
-export async function findFamily(req, res) {
+export async function findFamily(context: Context, req: HttpRequest) {
   try {
     const _id = new mongo.ObjectId(req.params.id)
     const result = await db.collection('products.families').findOne({ _id })
-    res.status(200).send(result)
+    context.res = {
+      status: 200,
+      body: result
+    }
   } catch (error) {
-    errorHandler(error, res)
+    errorHandler(error, context)
   }
 }
 
-export async function findAndGroupByCategories(req, res) {
+export async function findAndGroupByCategories(context: Context, req: HttpRequest) {
   try {
     const mongoQuery = createMatchObjectFromQuery(req.query)
     const result = await db
@@ -165,9 +165,12 @@ export async function findAndGroupByCategories(req, res) {
         { $sort: { category: 1 } },
       ])
       .toArray()
-    res.status(200).send(result)
+    context.res = {
+      status: 200,
+      body: result
+    }
   } catch (error) {
-    errorHandler(error, res)
+    errorHandler(error, context)
   }
 }
 
@@ -185,7 +188,7 @@ export async function create(context: Context, req: HttpRequest) {
   }
 }
 
-export async function createFamily(req, res) {
+export async function createFamily(context: Context, req: HttpRequest) {
   try {
     const { name, category, subcategory } = req.body
     const productFamily = new ProductFamily({ name, category, subcategory })
@@ -193,13 +196,16 @@ export async function createFamily(req, res) {
     const result = await db
       .collection('products.families')
       .findOne({ name: productFamily.name })
-    res.status(200).send(result)
+    context.res = {
+      status: 200,
+      body: result
+    }
   } catch (error) {
-    errorHandler(error, res)
+    errorHandler(error, context)
   }
 }
 
-export async function update(req, res) {
+export async function update(context: Context, req: HttpRequest) {
   const _id = new mongo.ObjectId(req.params.id)
   const update = req.body
   const set = {}
@@ -211,13 +217,16 @@ export async function update(req, res) {
       .collection('products')
       .updateOne({ _id }, { $set: set })
     console.log(result)
-    res.status(200).send(result)
+    context.res = {
+      status: 200,
+      body: result
+    }
   } catch (error) {
-    errorHandler(error, res)
+    errorHandler(error, context)
   }
 }
 
-export async function updateFamily(req, res) {
+export async function updateFamily(context: Context, req: HttpRequest) {
   const _id = new mongo.ObjectId(req.params.id)
   const { category, subcategory, name } = req.body
   const family = new ProductFamily({ category, subcategory, name })
@@ -228,36 +237,45 @@ export async function updateFamily(req, res) {
     const updatedFamily = await db
       .collection('products.families')
       .findOne({ _id })
-    res.status(200).send(updatedFamily)
+    context.res = {
+      status: 200,
+      body: updatedFamily
+    }
   } catch (error) {
-    errorHandler(error, res)
+    errorHandler(error, context)
   }
 }
 
-export async function deleteFamily(req, res) {
+export async function deleteFamily(context: Context, req: HttpRequest) {
   const family_id = req.params.id
   const _id = new mongo.ObjectID(family_id)
   try {
     await db.collection('products').deleteMany({ family_id })
     const result = await db.collection('products.families').deleteOne({ _id })
-    res.status(200).send(result)
+    context.res = {
+      status: 200,
+      body: result
+    }
   } catch (error) {
-    console.error(error)
+    errorHandler(error, context)
   }
 }
 
-export async function deleteProduct(req, res) {
+export async function deleteProduct(context: Context, req: HttpRequest) {
   const _id = new mongo.ObjectID(req.params.id)
   try {
     const result = await db.collection('products').deleteOne({ _id })
-    res.status(200).send(result)
+    context.res = {
+      status: 200,
+      body: result
+    }
   } catch (error) {
-    console.error(error)
+    errorHandler(error, context)
   }
 }
 
 // Product Categories
-export async function findCategories(req, res) {
+export async function findCategories(context: Context, req: HttpRequest) {
   try {
     const result = await db
       .collection('products.families')
@@ -267,14 +285,17 @@ export async function findCategories(req, res) {
         { $sort: { name: 1 } },
       ])
       .toArray()
-    res.status(200).send(result)
+    context.res = {
+      status: 200,
+      body: result
+    }
   } catch (error) {
-    errorHandler(error, res)
+    errorHandler(error, context)
   }
 }
 
 // Product Subcategories
-export async function findSubcategories(req, res) {
+export async function findSubcategories(context: Context, req: HttpRequest) {
   const query = req.query || {}
   try {
     const result = await db
@@ -286,14 +307,17 @@ export async function findSubcategories(req, res) {
         { $sort: { name: 1 } },
       ])
       .toArray()
-    res.status(200).send(result)
+    context.res = {
+      status: 200,
+      body: result
+    }
   } catch (error) {
-    errorHandler(error, res)
+    errorHandler(error, context)
   }
 }
 
 // Product Names
-export async function findNames(req, res) {
+export async function findNames(context: Context, req: HttpRequest) {
   const query = req.query || {}
   try {
     const result = await db
@@ -305,14 +329,17 @@ export async function findNames(req, res) {
         { $sort: { name: 1 } },
       ])
       .toArray()
-    res.status(200).send(result)
+    context.res = {
+      status: 200,
+      body: result
+    }
   } catch (error) {
-    errorHandler(error, res)
+    errorHandler(error, context)
   }
 }
 
 // Product Colors
-export async function findColors(req, res) {
+export async function findColors(context: Context, req: HttpRequest) {
   const query = req.query || {}
   try {
     const result = await db
@@ -347,14 +374,17 @@ export async function findColors(req, res) {
         { $sort: { name: 1 } },
       ])
       .toArray()
-    res.status(200).send(result)
+    context.res = {
+      status: 200,
+      body: result
+    }
   } catch (error) {
-    errorHandler(error, res)
+    errorHandler(error, context)
   }
 }
 
 // Product Sizes
-export async function findSizes(req, res) {
+export async function findSizes(context: Context, req: HttpRequest) {
   const query = req.query || {}
   try {
     const result = await db
@@ -389,8 +419,11 @@ export async function findSizes(req, res) {
         { $sort: { name: 1 } },
       ])
       .toArray()
-    res.status(200).send(result)
+    context.res = {
+      status: 200,
+      body: result
+    }
   } catch (error) {
-    errorHandler(error, res)
+    errorHandler(error, context)
   }
 }

@@ -1,4 +1,5 @@
 import { Context, HttpRequest } from "@azure/functions"
+import { MiddlewareHandler, notFound } from "../middleware/handler";
 import * as controller from './controllers'
 import * as validator from './validators'
 
@@ -6,13 +7,13 @@ export default async function router(context: Context, req: HttpRequest) {
   if (hasIdParameter(req)) {
     switch (req.method) {
       case 'GET':
-        console.log("here is your product")
+        notFound(context)
         break;
       case 'PATCH':
-        console.log("I patched the product")
+        await updateProduct(context, req)
         break;
       case 'DELETE':
-        console.log("I deleted the product")
+        await controller.deleteProduct(context, req)
         break;
     }
   } else {
@@ -22,11 +23,24 @@ export default async function router(context: Context, req: HttpRequest) {
         break;
 
       case 'POST':
-        await validator.create(context, req)
-        await controller.create(context, req)
+        await createProduct(context, req)
         break;
     }
   }
+}
+
+async function updateProduct(context: Context, req: HttpRequest) {
+  const handler = new MiddlewareHandler(context, req)
+  handler.use(validator.update)
+  handler.use(controller.update)
+  await handler.run()
+}
+
+async function createProduct(context: Context, req: HttpRequest) {
+  const handler = new MiddlewareHandler(context, req)
+  handler.use(validator.create)
+  handler.use(controller.create)
+  await handler.run()
 }
 
 function hasIdParameter(req) {

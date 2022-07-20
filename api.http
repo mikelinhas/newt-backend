@@ -1,0 +1,14 @@
+@url=http://localhost:7071
+
+###
+GET {{url}}/api/products
+
+###
+POST {{url}}/api/products
+Content-Type: application/json
+
+{
+  "size": "L",
+  "color": "blue",
+  "family_id": "asdf"
+}
